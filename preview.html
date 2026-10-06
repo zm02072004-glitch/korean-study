@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>韩语错题＋生词复习器</title>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--text:#202636;--muted:#697386;
+  --line:#e5e9f2;--primary:#5577ff;--primary2:#405fe0;
+  --ok:#23936b;--okbg:#eaf8f2;--bad:#d95368;--badbg:#fff0f2;
+  --shadow:0 8px 28px rgba(38,48,75,.08);--radius:18px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans KR","Microsoft YaHei",sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:1180px;margin:auto;padding:24px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+.logo{font-size:24px;font-weight:800}
+.logo small{display:block;color:var(--muted);font-size:12px;font-weight:500;margin-top:4px}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 13px;color:var(--text)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.danger{color:var(--bad)}
+.grid{display:grid;grid-template-columns:250px 1fr;gap:20px}
+.panel,.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.sidebar{padding:16px;height:max-content;position:sticky;top:16px}
+.nav-title{font-size:12px;color:var(--muted);margin:8px 10px}
+.nav{display:flex;flex-direction:column;gap:6px}
+.nav button{border:0;background:transparent;text-align:left;padding:11px 12px;border-radius:11px;color:var(--text)}
+.nav button.active,.nav button:hover{background:#eef2ff;color:var(--primary2)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{padding:16px}
+.stat .n{font-size:25px;font-weight:800}.stat .l{color:var(--muted);font-size:12px;margin-top:4px}
+.controls{padding:14px;margin-bottom:18px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:9px}
+input,select{border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px 11px;outline:none}
+input:focus,select:focus{border-color:var(--primary)}
+.quiz{padding:28px}
+.quiz-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px}
+.tag{display:inline-block;background:#f0f3f9;color:#59647a;border-radius:999px;padding:4px 8px;font-size:11px;margin:3px}
+.question{font-size:27px;font-weight:750;line-height:1.5;margin:30px 0 22px;white-space:pre-wrap}
+.options{display:grid;gap:11px}
+.option{width:100%;padding:15px 16px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:13px;transition:.15s}
+.option:hover:not(:disabled){border-color:#aebcff;background:#f8f9ff}
+.option.correct{border-color:var(--ok);background:var(--okbg)}
+.option.wrong{border-color:var(--bad);background:var(--badbg)}
+.option:disabled{cursor:default}
+.explain{margin-top:18px;padding:16px;border-radius:13px;background:#f7f8fc;border:1px solid var(--line);line-height:1.7}
+.result-actions{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
+.list{padding:16px}.item{padding:15px 5px;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}
+.item-q{font-weight:700;margin-bottom:8px}.item-meta{color:var(--muted);font-size:12px}
+.empty{text-align:center;padding:50px;color:var(--muted)}
+.hidden{display:none!important}
+.modal{position:fixed;inset:0;background:rgba(20,25,40,.4);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal-box{max-width:680px;width:100%;background:#fff;border-radius:18px;padding:22px}
+.modal-box h2{margin-top:0}.modal-box textarea{width:100%;height:280px;border:1px solid var(--line);border-radius:12px;padding:12px;font-family:ui-monospace,monospace;font-size:12px}
+@media(max-width:850px){
+ .grid{grid-template-columns:1fr}.sidebar{position:static}.stats{grid-template-columns:repeat(2,1fr)}
+ .controls{grid-template-columns:1fr 1fr}.question{font-size:23px}
+}
+@media(max-width:520px){
+ .app{padding:12px}.controls{grid-template-columns:1fr}.header-actions .btn{padding:8px 9px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="logo">한글 공부 <small>韩语错题＋生词复习器</small></div>
+  <div class="header-actions">
+    <button class="btn" onclick="openData()">导入 / 导出</button>
+    <button class="btn" onclick="resetProgress()">重置学习记录</button>
+  </div>
+</header>
+
+<div class="grid">
+<aside class="panel sidebar">
+  <div class="nav-title">练习</div>
+  <div class="nav">
+    <button class="active" data-view="all">全部题目</button>
+    <button data-view="vocabulary">生词</button>
+    <button data-view="confusable">易混词</button>
+    <button data-view="grammar">语法</button>
+    <button data-view="wrong_answer">错题</button>
+  </div>
+  <div class="nav-title" style="margin-top:20px">其他</div>
+  <div class="nav">
+    <button data-view="favorites">收藏</button>
+    <button data-view="unlearned">未做题</button>
+  </div>
+</aside>
+
+<main>
+  <section class="stats">
+    <div class="card stat"><div class="n" id="total">0</div><div class="l">题库总数</div></div>
+    <div class="card stat"><div class="n" id="done">0</div><div class="l">已作答</div></div>
+    <div class="card stat"><div class="n" id="accuracy">0%</div><div class="l">正确率</div></div>
+    <div class="card stat"><div class="n" id="wrong">0</div><div class="l">错题数</div></div>
+  </section>
+
+  <section class="card controls">
+    <input id="search" placeholder="搜索韩语、中文、题目、标签…" oninput="render()">
+    <select id="subFilter" onchange="render()"><option value="">全部题型</option></select>
+    <select id="tagFilter" onchange="render()"><option value="">全部标签</option></select>
+    <select id="sortFilter" onchange="render()">
+      <option value="default">默认顺序</option>
+      <option value="wrong">错误次数最多</option>
+      <option value="new">未作答优先</option>
+      <option value="favorite">收藏优先</option>
+    </select>
+  </section>
+
+  <section id="quiz" class="card quiz"></section>
+  <section id="list" class="card list hidden"></section>
+</main>
+</div>
+</div>
+
+<div id="modal" class="modal hidden">
+ <div class="modal-box">
+   <h2>题库数据</h2>
+   <p style="color:#697386;font-size:13px">导出当前完整题库与学习记录，或粘贴 JSON 导入。导入相同 ID 的题目会更新，不同 ID 会新增。</p>
+   <textarea id="dataText"></textarea>
+   <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+     <button class="btn" onclick="downloadData()">下载 JSON</button>
+     <button class="btn" onclick="importData()">导入</button>
+     <button class="btn" onclick="closeData()">关闭</button>
+   </div>
+ </div>
+</div>
+
+<script>
+const DEFAULT_QUESTIONS = [{"id": "ko-vocab-001", "language": "ko", "category": "vocabulary", "subCategory": "meaning", "question": "문득", "options": ["忽然、蓦地", "偷偷地", "勉强地", "反而"], "answer": 0, "explanation": "문득表示某个念头或感觉突然出现。", "example": "문득 그 사람이 생각났다.", "translation": "突然想起了那个人。", "tags": ["副词", "阅读"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-vocab-002", "language": "ko", "category": "vocabulary", "subCategory": "word", "question": "“好不容易、勉强”对应哪个韩语单词？", "options": ["벌써", "겨우", "문득", "슬쩍"], "answer": 1, "explanation": "겨우表示好不容易、勉强。", "example": "겨우 시험에 합격했다.", "translation": "好不容易通过了考试。", "tags": ["副词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-pron-001", "language": "ko", "category": "vocabulary", "subCategory": "pronunciation", "question": "꽃잎 的实际发音是？", "options": ["[꼰닙]", "[꼳입]", "[꼬칩]", "[꼰입]"], "answer": 0, "explanation": "꽃잎实际发音为[꼰닙]。", "example": "꽃잎이 바람에 날렸다.", "translation": "花瓣被风吹走了。", "tags": ["音变", "鼻音化"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-spell-001", "language": "ko", "category": "vocabulary", "subCategory": "spelling", "question": "下面哪个拼写正确？", "options": ["어떻해", "어떻게", "어떡게", "어떻케"], "answer": 1, "explanation": "어떻게是正确拼写。", "example": "이 문제를 어떻게 풀어요?", "translation": "这道题怎么做？", "tags": ["拼写", "易错"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-confuse-001", "language": "ko", "category": "confusable", "subCategory": "context", "question": "회의가 시작되기도 전에 그는 ___ 자리를 떠났다.", "options": ["벌써", "아직", "계속", "별로"], "answer": 0, "explanation": "벌써表示已经、早就，这里强调事情发生得早。", "example": "벌써 집에 갔어요?", "translation": "已经回家了吗？", "tags": ["易混词", "副词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-confuse-002", "language": "ko", "category": "confusable", "subCategory": "meaning", "question": "“已经”在强调某件事此前已经发生时，最合适的是？", "options": ["벌써", "이미", "아마", "혹시"], "answer": 1, "explanation": "이미表示某事此前已经发生或形成；벌써常带有“这么快、已经”的语感。", "example": "그 사실은 이미 알고 있었어요.", "translation": "那个事实我已经知道了。", "tags": ["易混词", "副词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-grammar-001", "language": "ko", "category": "grammar", "subCategory": "particle", "question": "저는 한국어___ 공부합니다.", "options": ["를", "이", "은", "에서"], "answer": 0, "explanation": "한국어是공부하다的宾语，因此使用를。", "example": "저는 매일 한국어를 공부합니다.", "translation": "我每天学习韩语。", "tags": ["助词", "基础语法"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-grammar-002", "language": "ko", "category": "grammar", "subCategory": "reason", "question": "비가 오___ 우산을 가져왔어요.", "options": ["지만", "으니까", "는데", "도록"], "answer": 1, "explanation": "-(으)니까可以表示原因。", "example": "비가 오니까 우산을 가져왔어요.", "translation": "因为下雨，所以带了雨伞。", "tags": ["连接语尾", "原因"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-vocab-004", "language": "ko", "category": "vocabulary", "subCategory": "meaning", "question": "드디어", "options": ["终于", "突然", "经常", "大概"], "answer": 0, "explanation": "드디어表示经过等待后终于发生某事。", "example": "드디어 시험이 끝났다.", "translation": "考试终于结束了。", "tags": ["副词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-vocab-005", "language": "ko", "category": "vocabulary", "subCategory": "meaning", "question": "아무래도", "options": ["看来、无论如何还是", "完全不", "马上", "偶尔"], "answer": 0, "explanation": "아무래도常根据情况作判断。", "example": "아무래도 오늘은 비가 올 것 같아요.", "translation": "看来今天要下雨。", "tags": ["副词", "阅读"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-vocab-006", "language": "ko", "category": "vocabulary", "subCategory": "word", "question": "“偶尔”对应哪个韩语单词？", "options": ["자주", "가끔", "벌써", "전혀"], "answer": 1, "explanation": "가끔表示偶尔、有时候。", "example": "가끔 친구를 만나요.", "translation": "偶尔见朋友。", "tags": ["副词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-vocab-007", "language": "ko", "category": "vocabulary", "subCategory": "meaning", "question": "전혀", "options": ["完全、一点也不", "好不容易", "反而", "突然"], "answer": 0, "explanation": "전혀通常与否定表达搭配。", "example": "전혀 모르겠어요.", "translation": "完全不知道。", "tags": ["副词", "否定"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-vocab-008", "language": "ko", "category": "vocabulary", "subCategory": "meaning", "question": "오히려", "options": ["反而", "终于", "偷偷地", "马上"], "answer": 0, "explanation": "오히려表示与预想相反。", "example": "쉬었는데 오히려 더 피곤해졌다.", "translation": "休息了，反而更累了。", "tags": ["副词", "易混词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-vocab-009", "language": "ko", "category": "vocabulary", "subCategory": "meaning", "question": "익숙하다", "options": ["熟悉、习惯", "陌生", "困难", "相似"], "answer": 0, "explanation": "익숙하다表示熟悉、习惯。", "example": "이제 한국 생활에 익숙해졌어요.", "translation": "现在已经习惯韩国生活了。", "tags": ["形容词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-vocab-010", "language": "ko", "category": "vocabulary", "subCategory": "meaning", "question": "낯설다", "options": ["陌生、不熟悉", "熟练", "方便", "温暖"], "answer": 0, "explanation": "낯설다表示陌生、不熟悉，与익숙하다相对。", "example": "아직 이 동네가 낯설어요.", "translation": "我还不熟悉这个地区。", "tags": ["形容词", "易混词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-pron-002", "language": "ko", "category": "vocabulary", "subCategory": "pronunciation", "question": "같이 的实际发音是？", "options": ["[가치]", "[같이]", "[가티]", "[갑시]"], "answer": 0, "explanation": "같이发生腭化，实际发音为[가치]。", "example": "같이 공부해요.", "translation": "一起学习吧。", "tags": ["音变", "腭化"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-pron-003", "language": "ko", "category": "vocabulary", "subCategory": "pronunciation", "question": "한국말 的实际发音更接近哪一个？", "options": ["[한궁말]", "[한국말]", "[한굼말]", "[항국말]"], "answer": 0, "explanation": "한국말中ㄱ受到后面的鼻音影响发生鼻音化。", "example": "한국말을 잘하고 싶어요.", "translation": "我想把韩语说好。", "tags": ["音变", "鼻音化"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-spell-002", "language": "ko", "category": "vocabulary", "subCategory": "spelling", "question": "“几天”的正确拼写是？", "options": ["몇일", "며칠", "멷칠", "몇칠"], "answer": 1, "explanation": "“几天”正确拼写为며칠。", "example": "며칠 동안 쉬었어요.", "translation": "休息了几天。", "tags": ["拼写", "易错"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-spell-003", "language": "ko", "category": "vocabulary", "subCategory": "spelling", "question": "下面哪个拼写正确？", "options": ["할께요", "할게요", "할께여", "할게여"], "answer": 1, "explanation": "表示约定或意志时，正确拼写为할게요。", "example": "내일 다시 연락할게요.", "translation": "明天我再联系你。", "tags": ["拼写", "易错"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-confuse-003", "language": "ko", "category": "confusable", "subCategory": "context", "question": "오늘은 ___ 피곤해서 일찍 자려고 해요.", "options": ["너무", "이미", "벌써", "전혀"], "answer": 0, "explanation": "너무表示程度很高，这里表示“太累了”。", "example": "오늘은 너무 피곤해요.", "translation": "今天太累了。", "tags": ["易混词", "副词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-confuse-004", "language": "ko", "category": "confusable", "subCategory": "context", "question": "그 사람을 ___ 본 적이 있어요.", "options": ["한번", "한참", "벌써", "전혀"], "answer": 0, "explanation": "한번表示一次、曾经，常用于经验表达。", "example": "그 영화를 한번 본 적이 있어요.", "translation": "我曾经看过那部电影。", "tags": ["易混词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-grammar-003", "language": "ko", "category": "grammar", "subCategory": "particle", "question": "친구___ 같이 영화를 봤어요.", "options": ["와", "를", "이", "에서"], "answer": 0, "explanation": "친구和같이搭配时使用와/과，表示和朋友一起。", "example": "친구와 같이 영화를 봤어요.", "translation": "和朋友一起看了电影。", "tags": ["助词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-grammar-004", "language": "ko", "category": "grammar", "subCategory": "particle", "question": "학교___ 한국어를 공부해요.", "options": ["에서", "을", "이", "에게"], "answer": 0, "explanation": "에서用于表示动作发生的地点。", "example": "학교에서 공부해요.", "translation": "在学校学习。", "tags": ["助词"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-grammar-005", "language": "ko", "category": "grammar", "subCategory": "time", "question": "밥을 먹기 ___ 손을 씻어요.", "options": ["전에", "때문에", "위해서", "마다"], "answer": 0, "explanation": "-기 전에表示在做某事之前。", "example": "자기 전에 이를 닦아요.", "translation": "睡觉前刷牙。", "tags": ["-기 전에", "时间"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-grammar-006", "language": "ko", "category": "grammar", "subCategory": "purpose", "question": "한국어를 배우___ 한국에 왔어요.", "options": ["려고", "지만", "는데", "도록"], "answer": 0, "explanation": "-(으)려고表示计划或目的。", "example": "한국어를 배우려고 한국에 왔어요.", "translation": "为了学习韩语来到了韩国。", "tags": ["-(으)려고", "目的"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-grammar-007", "language": "ko", "category": "grammar", "subCategory": "reason", "question": "비가 오___ 우산을 가져왔어요.", "options": ["니까", "지만", "도록", "마다"], "answer": 0, "explanation": "-(으)니까可以表示原因或理由。", "example": "비가 오니까 우산을 가져왔어요.", "translation": "因为下雨，所以带了雨伞。", "tags": ["-(으)니까", "原因"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-grammar-008", "language": "ko", "category": "grammar", "subCategory": "change", "question": "한국 생활에 익숙해지___ .", "options": ["게 되었어요", "기 전에", "려고 해요", "지만"], "answer": 0, "explanation": "-게 되다表示状态或情况发生变化。", "example": "한국 생활에 익숙해지게 되었어요.", "translation": "变得习惯韩国生活了。", "tags": ["-게 되다", "变化"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-grammar-009", "language": "ko", "category": "grammar", "subCategory": "time", "question": "한국어를 공부한 ___ 1년이 되었어요.", "options": ["지", "동안", "전에", "때문에"], "answer": 0, "explanation": "-은/ㄴ 지表示从某动作发生后经过的时间。", "example": "한국어를 공부한 지 1년이 되었어요.", "translation": "学习韩语已经一年了。", "tags": ["-은/ㄴ 지", "时间"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-wrong-002", "language": "ko", "category": "wrong_answer", "subCategory": "vocabulary", "question": "“好不容易”应该选择哪个词？", "options": ["겨우", "전혀", "오히려", "이미"], "answer": 0, "explanation": "겨우表示好不容易、勉强。", "example": "겨우 시험에 합격했어요.", "translation": "好不容易通过了考试。", "tags": ["错题", "副词", "易错"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-wrong-003", "language": "ko", "category": "wrong_answer", "subCategory": "particle", "question": "저는 매일 학교___ 가요.", "options": ["에", "에서", "를", "와"], "answer": 0, "explanation": "表示移动的目的地时使用에；에서主要表示动作发生地点。", "example": "저는 매일 학교에 가요.", "translation": "我每天去学校。", "tags": ["错题", "助词", "易混"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}, {"id": "ko-wrong-004", "language": "ko", "category": "wrong_answer", "subCategory": "pronunciation", "question": "같이 的正确发音是？", "options": ["[가치]", "[같이]", "[가티]", "[갑시]"], "answer": 0, "explanation": "같이发生腭化，实际发音为[가치]。", "example": "우리 같이 가요.", "translation": "我们一起走吧。", "tags": ["错题", "音变", "腭化"], "source": "测试题库", "wrongCount": 0, "correctCount": 0, "favorite": false}];
+const STORAGE_KEY = "korean_quiz_state_v1";
+let state = loadState();
+let view = "all";
+let current = null;
+let answered = false;
+
+function loadState(){
+  try{
+    const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+    return s && Array.isArray(s.questions) ? s : {questions:DEFAULT_QUESTIONS.map(q=>({...q}))};
+  }catch(e){return {questions:DEFAULT_QUESTIONS.map(q=>({...q}))}}
+}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+function qs(){return state.questions}
+function labelCat(c){return {vocabulary:"生词",confusable:"易混词",grammar:"语法",wrong_answer:"错题"}[c]||c}
+function labelSub(s){
+ const m={meaning:"选意思",word:"选单词",pronunciation:"选读音",spelling:"选拼写",context:"语境辨析",particle:"助词",reason:"原因",purpose:"目的",time:"时间",change:"变化"};
+ return m[s]||s;
+}
+function filtered(){
+ let arr=[...qs()];
+ if(view==="favorites") arr=arr.filter(q=>q.favorite);
+ else if(view==="unlearned") arr=arr.filter(q=>(q.correctCount+q.wrongCount)===0);
+ else if(view!=="all") arr=arr.filter(q=>q.category===view);
+ const s=document.getElementById("search").value.trim().toLowerCase();
+ if(s) arr=arr.filter(q=>JSON.stringify(q).toLowerCase().includes(s));
+ const sub=document.getElementById("subFilter").value;
+ if(sub) arr=arr.filter(q=>q.subCategory===sub);
+ const tag=document.getElementById("tagFilter").value;
+ if(tag) arr=arr.filter(q=>(q.tags||[]).includes(tag));
+ const sort=document.getElementById("sortFilter").value;
+ if(sort==="wrong") arr.sort((a,b)=>b.wrongCount-a.wrongCount);
+ if(sort==="new") arr.sort((a,b)=>(a.correctCount+a.wrongCount)-(b.correctCount+b.wrongCount));
+ if(sort==="favorite") arr.sort((a,b)=>Number(b.favorite)-Number(a.favorite));
+ return arr;
+}
+function updateFilters(){
+ const subs=[...new Set(qs().map(q=>q.subCategory))].sort();
+ const tags=[...new Set(qs().flatMap(q=>q.tags||[]))].sort();
+ const sf=document.getElementById("subFilter"), tf=document.getElementById("tagFilter");
+ const sv=sf.value,tv=tf.value;
+ sf.innerHTML='<option value="">全部题型</option>'+subs.map(x=>`<option value="${esc(x)}">${esc(labelSub(x))}</option>`).join("");
+ tf.innerHTML='<option value="">全部标签</option>'+tags.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+ sf.value=subs.includes(sv)?sv:"";tf.value=tags.includes(tv)?tv:"";
+}
+function stats(){
+ const all=qs(),done=all.filter(q=>q.correctCount+q.wrongCount>0);
+ const correct=all.reduce((n,q)=>n+q.correctCount,0),wrong=all.reduce((n,q)=>n+q.wrongCount,0);
+ document.getElementById("total").textContent=all.length;
+ document.getElementById("done").textContent=done.length;
+ document.getElementById("wrong").textContent=all.filter(q=>q.wrongCount>0).length;
+ document.getElementById("accuracy").textContent=(correct+wrong?Math.round(correct/(correct+wrong)*100):0)+"%";
+}
+function render(){
+ stats();updateFilters();
+ const arr=filtered();
+ if(current && !arr.some(q=>q.id===current.id)) current=null;
+ if(!current && arr.length) current=arr[0];
+ renderQuiz(arr);
+}
+function renderQuiz(arr){
+ const el=document.getElementById("quiz"), list=document.getElementById("list");
+ list.classList.add("hidden");el.classList.remove("hidden");
+ if(!arr.length){el.innerHTML='<div class="empty">当前筛选没有题目。<br>可以换一个分类或导入更多题库。</div>';return}
+ const q=current||arr[0];
+ const idx=arr.findIndex(x=>x.id===q.id);
+ el.innerHTML=`
+ <div class="quiz-top">
+   <span>${idx+1} / ${arr.length}　${labelCat(q.category)} · ${labelSub(q.subCategory)}</span>
+   <button class="btn" onclick="toggleFavorite('${q.id}')">${q.favorite?"★ 已收藏":"☆ 收藏"}</button>
+ </div>
+ <div>${(q.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
+ <div class="question">${esc(q.question)}</div>
+ <div class="options">${q.options.map((o,i)=>`<button class="option" id="opt-${i}" onclick="answer(${i})">${String.fromCharCode(65+i)}. ${esc(o)}</button>`).join("")}</div>
+ <div id="feedback"></div>
+ <div class="result-actions">
+   <button class="btn" onclick="prevQuestion()">上一题</button>
+   <button class="btn primary" onclick="nextQuestion()">下一题</button>
+ </div>`;
+}
+function answer(i){
+ if(answered)return;
+ answered=true;
+ const q=current;
+ const ok=i===q.answer;
+ q[ok?"correctCount":"wrongCount"]++;
+ document.querySelectorAll(".option").forEach((b,n)=>{
+   b.disabled=true;
+   if(n===q.answer)b.classList.add("correct");
+   if(n===i && !ok)b.classList.add("wrong");
+ });
+ document.getElementById("feedback").innerHTML=`
+ <div class="explain">
+   <b>${ok?"✓ 回答正确":"✗ 回答错误"}</b><br>
+   正确答案：${String.fromCharCode(65+q.answer)}. ${esc(q.options[q.answer])}
+   <br><br>${esc(q.explanation||"")}
+   ${q.example?`<br><br><b>例句：</b>${esc(q.example)}<br>${esc(q.translation||"")}`:""}
+ </div>`;
+ save();stats();
+}
+function nextQuestion(){
+ const arr=filtered();if(!arr.length)return;
+ let i=arr.findIndex(q=>q.id===current.id);current=arr[(i+1)%arr.length];answered=false;renderQuiz(arr);
+}
+function prevQuestion(){
+ const arr=filtered();if(!arr.length)return;
+ let i=arr.findIndex(q=>q.id===current.id);current=arr[(i-1+arr.length)%arr.length];answered=false;renderQuiz(arr);
+}
+function toggleFavorite(id){
+ const q=qs().find(q=>q.id===id);if(!q)return;q.favorite=!q.favorite;save();render();
+}
+function setView(v){
+ view=v;current=null;answered=false;
+ document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===v));
+ render();
+}
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+
+function openData(){
+ document.getElementById("dataText").value=JSON.stringify({schemaVersion:"1.0",language:"ko",title:"韩语错题＋生词复习器",questions:qs()},null,2);
+ document.getElementById("modal").classList.remove("hidden");
+}
+function closeData(){document.getElementById("modal").classList.add("hidden")}
+function importData(){
+ try{
+   const obj=JSON.parse(document.getElementById("dataText").value);
+   const incoming=Array.isArray(obj)?obj:obj.questions;
+   if(!Array.isArray(incoming))throw Error("没有找到 questions 数组");
+   const map=new Map(qs().map(q=>[q.id,q]));
+   incoming.forEach(q=>{
+     if(!q.id)throw Error("存在没有 id 的题目");
+     const old=map.get(q.id);
+     map.set(q.id,{...q,correctCount:old?.correctCount??q.correctCount??0,wrongCount:old?.wrongCount??q.wrongCount??0,favorite:old?.favorite??q.favorite??false});
+   });
+   state.questions=[...map.values()];save();current=null;closeData();render();
+   alert("导入成功，共 "+state.questions.length+" 道题。");
+ }catch(e){alert("导入失败："+e.message)}
+}
+function downloadData(){
+ const blob=new Blob([JSON.stringify({schemaVersion:"1.0",language:"ko",title:"韩语错题＋生词复习器",questions:qs()},null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="korean_quiz_backup.json";a.click();URL.revokeObjectURL(a.href);
+}
+function resetProgress(){
+ if(!confirm("确定重置所有答题次数和收藏吗？题目本身不会删除。"))return;
+ qs().forEach(q=>{q.correctCount=0;q.wrongCount=0;q.favorite=false});save();current=null;answered=false;render();
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+render();
+</script>
+</body>
+</html>
